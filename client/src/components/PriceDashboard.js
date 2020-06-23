@@ -1,29 +1,10 @@
 import React from 'react';
 import Card from 'react-bootstrap/Card';
 import { Link } from 'react-router-dom';
+import Alert from 'react-bootstrap/Alert';
+
 
 class PriceDashboard extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            brand: [],
-            category: '',
-        }
-    }
-
-    pushCategory(categories) {
-        var categoryVec
-        if (categories) {
-            categoryVec = [];
-            for (var c of categories) {
-                categoryVec.push(c.value);
-            }
-        } else {
-            categoryVec = null;
-        }
-        this.setState({ category: categoryVec }, () => { this.props.getFilteredCars(this.state.category, this.state.brand) });
-
-    }
 
     render() {
         return (
@@ -56,9 +37,13 @@ class PriceDashboard extends React.Component {
                             </span>
                         </Card>
                     </div>
-                    {this.props.checkForm() && <Link to="/payment" className="btn btn-success d-flex justify-content-center">
+                    {this.props.checkForm() && this.props.numCars > 0 ?
+                        <Link to="/payment" className="btn btn-success d-flex justify-content-center" >
                             Book Now!
-                    </Link>}
+                    </Link> :
+                        this.props.numCars === 0 && <Alert variant="danger" className="d-flex justify-content-center" >
+                        No cars available
+                    </Alert>}
                 </Card.Body>
             </Card>
 

@@ -144,7 +144,7 @@ class App extends React.Component {
       }
 
       if (category) {
-        var price = cars[0].price;
+        var price = cars[0] ? cars[0].price : 0;
         for (var factor of this.state.modifiers) {
           price = price * factor;
         }
