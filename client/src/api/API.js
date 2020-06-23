@@ -205,13 +205,7 @@ async function getRentals(extended) {
     }
 }
 
-async function checkPayment(cardHolder, cardNumber, expiration, cvv, rental) {
-    var rentalObj = {
-        carId: rental.car.id,
-        startDate: rental.startDate,
-        endDate: rental.endDate,
-        price: rental.price
-    }
+async function checkPayment(cardHolder, cardNumber, expiration, cvv) {
     var payObj = {
         cardHolder: cardHolder,
         cardNumber: cardNumber,
@@ -224,7 +218,34 @@ async function checkPayment(cardHolder, cardNumber, expiration, cvv, rental) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ ...payObj, ...rentalObj }),
+            body: JSON.stringify({ ...payObj }),
+        }).then((response) => {
+            if (response.ok) {
+                resolve(null)
+            } else {
+                // analyze the cause of error
+                response.json()
+                    .then((obj) => { reject(obj); }) // error msg in the response body
+                    .catch((err) => { reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
+            }
+        }).catch((err) => { reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
+    });
+}
+
+async function recordRental(rental) {
+    var rentalObj = {
+        carId: rental.car.id,
+        startDate: rental.startDate,
+        endDate: rental.endDate,
+        price: rental.price
+    }
+    return new Promise((resolve, reject) => {
+        fetch(baseURL + "/record_rental", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ...rentalObj }),
         }).then((response) => {
             if (response.ok) {
                 resolve(null)
@@ -260,5 +281,5 @@ async function deleteRental(rentalObj) {
 }
 
 
-const API = { login, logout, getPublicCars, getPrivateCars, getRentals, checkPayment, deleteRental };
+const API = { login, logout, getPublicCars, getPrivateCars, getRentals, checkPayment, deleteRental, recordRental };
 export default API;

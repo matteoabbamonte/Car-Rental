@@ -86,9 +86,10 @@ class PaymentForm extends React.Component {
             API.checkPayment(this.state.cardHolder,
                 this.state.cardNumber.replace(/\s/g, ""),
                 this.state.expiration,
-                this.state.cvv,
-                this.props.rentalObj).then(() => {
-                    this.setState({ paymentStatus: true, reservedCar: this.props.rentalObj.car })
+                this.state.cvv).then(() => {
+                    API.recordRental(this.props.rentalObj).then(() => {
+                        this.setState({ paymentStatus: true, reservedCar: this.props.rentalObj.car })
+                    })
                 }).catch(() => {
                     this.setState({ paymentStatus: "error" })
                 })

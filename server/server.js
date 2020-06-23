@@ -134,9 +134,7 @@ app.get('/api/rentals', [
 });
 
 // POST /payment
-// Request body: object describing an task 
-// Response body: empty (ALTERNATIVE: new 'id' for the inserted course)
-//    (ALTERNATIVE: return a full copy of the Exam)
+// Request body: object describing payment data
 app.post('/api/payment', [
   check('cardHolder').custom((string) => {
     if (string.split(" ").length < 2) {
@@ -147,7 +145,19 @@ app.post('/api/payment', [
   }),
   check('cardNumber').isNumeric().isLength({ min: 16, max: 16 }),
   check('expiration').isAfter(moment().format('YYYY-MM-DD')),
-  check('cvv').isLength({ min: 3, max: 3 }),
+  check('cvv').isLength({ min: 3, max: 3 })
+], (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  } else {
+    return res.end()
+  }
+});
+
+// POST /record_rental
+// Request body: object describing a rental to be inserted
+app.post('/api/record_rental', [
   check('startDate').isAfter(moment().format('YYYY-MM-DD')),
   check('endDate').isAfter(moment().format('YYYY-MM-DD')),
   check('carId').isInt(),

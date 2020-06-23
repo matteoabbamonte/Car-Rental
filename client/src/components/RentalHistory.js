@@ -53,7 +53,7 @@ class RentalHistory extends React.Component {
                     rentals={this.state.rentals==='loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isBefore(moment()))}
                     colors={this.props.colors} />
                 <RentalsTable past={false}
-                    rentals={this.state.rentals==='loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isBefore(moment()))}
+                    rentals={this.state.rentals==='loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isAfter(moment()))}
                     colors={this.props.colors}
                     setDeletionPopUp={this.setDeletionPopUp} />
             </div>
