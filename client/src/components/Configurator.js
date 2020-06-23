@@ -102,7 +102,6 @@ class Configurator extends React.Component {
                                 <option>C</option>
                                 <option>D</option>
                                 <option>E</option>
-                                <option>F</option>
                             </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="checkInsurance">
