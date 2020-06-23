@@ -1,0 +1,20 @@
+
+.scrollInitialTable {
+    height: 55vh;   
+    overflow-y: auto;    /* Trigger vertical scroll    */
+}
+
+.scrollLoggedTable {
+    height: 65vh;   
+    overflow-y: auto;    /* Trigger vertical scroll    */
+}
+
+.scrollLoggedTableButton {
+    height: 58vh;   
+    overflow-y: auto;    /* Trigger vertical scroll    */
+}
+
+.scrollRentalsTable {
+    height: 66vh;   
+    overflow-y: auto;
+}
