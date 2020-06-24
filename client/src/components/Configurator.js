@@ -111,7 +111,7 @@ class Configurator extends React.Component {
                     </Form.Row>
 
                     <Form.Group controlId="inputNumberDrivers">
-                        <Form.Label><span className="badge badge-light">Number of other drivers:</span></Form.Label>
+                        <Form.Label><span className="badge badge-light">Number of additional drivers:</span></Form.Label>
                         <Form.Control className="border-success" type="number" placeholder="drivers" onChange={event => { this.pushModifier("nDrivers", event.target.value) }} />
                     </Form.Group>
 
@@ -132,7 +132,7 @@ class Configurator extends React.Component {
                     </Form.Group>
 
                     <Form.Group controlId="inputKm">
-                        <Form.Label><span className="badge badge-light">Estimate number of km:</span></Form.Label>
+                        <Form.Label><span className="badge badge-light">Estimate number of km per day:</span></Form.Label>
                         <Form.Control className="border-success" type="number" placeholder="Km" onChange={event => { this.pushModifier("km", event.target.value) }} />
                     </Form.Group>
 

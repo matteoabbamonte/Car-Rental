@@ -44,9 +44,9 @@ app.post('/api/logout', (req, res) => {
   res.clearCookie('token').end();
 });
 
-// GET /cars/ (all task_ids)/<task_id>
-// Response body: object describing a public Task specified by its id
-// Error: if the Task does not exist, returns {}
+// GET /cars
+// Response body: object describing a car
+// Error: if there is no car list available, it returns the error description
 app.get('/api/cars', (req, res) => {
   const categories = req.query.categories.split("_");
   const brands = req.query.brands.split("_");
@@ -72,7 +72,7 @@ app.use(
 // GET /cars?<filterName>=<filterValue>
 // Parameters: filterName, filterValue
 // Response body: list of cars
-// Error: the error message is returned
+// Error: if there is no car list available, it returns the error description
 app.get('/api/configure', (req, res) => {
   if (req.user && req.query.period != "none" && req.query.category != "none") {
     const period = req.query.period.split("_");
@@ -81,7 +81,7 @@ app.get('/api/configure', (req, res) => {
       return res.status(422).json({ errors: [{ 'msg: ': 'Wrong dates' }] });
     }
     dao.getCarsByCategoryAndPeriod(req.query.category, period)
-      .then((task) => { res.json(task); })
+      .then((cars) => { res.json(cars); })
       .catch((err) => {
         res.status(500).json({
           errors: [{ 'msg: ': err }],
@@ -94,7 +94,7 @@ app.get('/api/configure', (req, res) => {
       return res.status(422).json({ errors: [{ 'msg: ': 'Wrong dates' }] });
     }
     dao.getCarsByPeriod(period)
-      .then((task) => { res.json(task); })
+      .then((cars) => { res.json(cars); })
       .catch((err) => {
         res.status(500).json({
           errors: [{ 'msg: ': err }],
@@ -102,7 +102,7 @@ app.get('/api/configure', (req, res) => {
       });
   } else if (req.user) {
     dao.getCarsByCategoryAndBrand(req.query.category, "none")
-      .then((task) => { res.json(task); })
+      .then((cars) => { res.json(cars); })
       .catch((err) => {
         res.status(500).json({
           errors: [{ 'msg: ': err }],
@@ -112,7 +112,8 @@ app.get('/api/configure', (req, res) => {
 });
 
 
-// GET /rentals/ <task_id>
+// GET /rentals?extended=<true/false>
+// Parameters: extended, points out whether the calling function needs informations about the cars
 // Response body: list of records from rental table concerning the specified user
 // Error: returns error message
 app.get('/api/rentals', [

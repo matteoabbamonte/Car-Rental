@@ -84,7 +84,7 @@ class App extends React.Component {
           categories: [],
           colors: {},
           logged: false,
-          //public: true,
+          public: true,
           currentPrice: 0,
           modifiers: [],
           modifiersVec: [],
