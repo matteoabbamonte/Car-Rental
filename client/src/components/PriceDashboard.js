@@ -6,6 +6,12 @@ import Alert from 'react-bootstrap/Alert';
 
 class PriceDashboard extends React.Component {
 
+    componentDidMount() {
+        if (!this.props.isStateClean) {
+            this.props.loadInitialData();
+        }
+    }
+
     render() {
         return (
             <Card
