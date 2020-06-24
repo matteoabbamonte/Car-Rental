@@ -144,13 +144,13 @@ const FakeRows = () => {
 }
 
 const RentalsTable = (props) => {
-    return (<div className="my-5 mx-auto">
+    return (<div className="my-5 mx-auto col-6">
         <div className={props.past ? "badge badge-primary" : "badge badge-success"}>
-            <h4>
+            {props.rentals!=="loading" && props.rentals.length===0 ? <h4>No rental available in this section</h4> : <h4>
                 {props.past ? "Your previous rentals:" : "Your future rentals:"}
-            </h4>
+            </h4>}
         </div>
-        <div className="scrollRentalsTable">
+        {(props.rentals!=="loading" && props.rentals.length===0) || <div className="scrollRentalsTable">
             <table className="table table-hover table-dark text-center" id="carTable">
                 <thead>
                     <tr>
@@ -178,7 +178,7 @@ const RentalsTable = (props) => {
                             rental={r} />)}
                 </tbody>
             </table>
-        </div>
+        </div> }
     </div>)
 }
 

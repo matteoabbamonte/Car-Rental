@@ -13,37 +13,39 @@ class CarTable extends React.Component {
                 this.props.checkForm() ?
                     "text-dark scrollLoggedTableButton" :
                     "text-dark scrollLoggedTable"}>
-                <table className="table table-hover table-dark text-center" id="carTable">
-                    <thead>
-                        <tr>
-                            {!this.props.logged && <th>
-                                Book your car now!
+                {this.props.cars !== "loading" && this.props.cars.length === 0 ?
+                    <span className="badge badge-danger col my-5"><h4>No cars available with these filters</h4></span> :
+                    <table className="table table-hover table-dark text-center" id="carTable">
+                        <thead>
+                            <tr>
+                                {!this.props.logged && <th>
+                                    Book your car now!
                             </th>}
-                            <th>
-                                Brand
+                                <th>
+                                    Brand
                             </th>
-                            <th>
-                                Model
+                                <th>
+                                    Model
                             </th>
-                            <th>
-                                Seats
+                                <th>
+                                    Seats
                             </th>
-                            <th>
-                                Fuel
+                                <th>
+                                    Fuel
                             </th>
-                            <th>
-                                Car Category
+                                <th>
+                                    Car Category
                             </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {(this.props.cars==='loading' && <FakeRows logged={this.props.logged} />) || this.props.cars.map((c) => <CarRow key={c.id}
-                            car={c}
-                            colors={this.props.colors}
-                            logged={this.props.logged} />)
-                        }
-                    </tbody>
-                </table>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {(this.props.cars === 'loading' && <FakeRows logged={this.props.logged} />) || this.props.cars.map((c) => <CarRow key={c.id}
+                                car={c}
+                                colors={this.props.colors}
+                                logged={this.props.logged} />)
+                            }
+                        </tbody>
+                    </table>}
             </div >
         )
     }
@@ -53,11 +55,11 @@ class CarTable extends React.Component {
 const FakeRows = (props) => {
 
     return (<>
-        <SingleFakeRow logged={props.logged}/>
-        <SingleFakeRow logged={props.logged}/>
-        <SingleFakeRow logged={props.logged}/>
-        <SingleFakeRow logged={props.logged}/>
-        <SingleFakeRow logged={props.logged}/>
+        <SingleFakeRow logged={props.logged} />
+        <SingleFakeRow logged={props.logged} />
+        <SingleFakeRow logged={props.logged} />
+        <SingleFakeRow logged={props.logged} />
+        <SingleFakeRow logged={props.logged} />
     </>)
 
 }

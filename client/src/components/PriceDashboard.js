@@ -16,14 +16,14 @@ class PriceDashboard extends React.Component {
                     <div className="d-flex justify-content-center">
                         <span className="badge badge-light mr-2">
                             <h6>
-                                The current price for your rental is:
+                                {this.props.currentPrice === 0 ? "Fill the form to estimate the price" : "The current price for your rental is:"}
                             </h6>
                         </span>
-                        <Card bg="success">
+                        {this.props.currentPrice !== 0 && <Card bg="success">
                             <span className="mx-3">
-                                {this.props.currentPrice}€
+                                {this.props.currentPrice + "€"}
                             </span>
-                        </Card>
+                        </Card>}
                     </div>
                     <div className="my-2 d-flex justify-content-center">
                         <span className="badge badge-light mr-2">
@@ -42,7 +42,7 @@ class PriceDashboard extends React.Component {
                             Book Now!
                     </Link> :
                         this.props.numCars === 0 && <Alert variant="danger" className="d-flex justify-content-center" >
-                        No cars available
+                            No cars available
                     </Alert>}
                 </Card.Body>
             </Card>
