@@ -60,7 +60,8 @@ async function getPrivateCars(category, period) {
     if (response.ok) {
         return tasksJson.map((ex) => Object.assign(new Car(), ex));
     } else {
-        throw tasksJson;  // An object with the error coming from the server
+        let err = {status: response.status, errObj:tasksJson};
+        throw err;  // An object with the error coming from the server
     }
 }
 
@@ -92,8 +93,7 @@ async function logout() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({}),
+            }
         }).then((response) => {
             if (response.ok) {
                 resolve(null);
@@ -114,7 +114,8 @@ async function getRentals(extended) {
             return rentalsJson.map((r) => { return new Rental(r.car_id, r.user_id, r.start_date, r.end_date) });
         }
     } else {
-        throw rentalsJson;  // An object with the error coming from the server
+        let err = {status: response.status, errObj:rentalsJson};
+        throw err;  // An object with the error coming from the server
     }
 }
 
@@ -138,7 +139,7 @@ async function checkPayment(cardHolder, cardNumber, expiration, cvv) {
             } else {
                 // analyze the cause of error
                 response.json()
-                    .then((obj) => { reject(obj); }) // error msg in the response body
+                    .then((obj) => { reject({...obj, status: response.status}); }) // error msg in the response body
                     .catch((err) => { reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
             }
         }).catch((err) => { reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
@@ -186,13 +187,24 @@ async function deleteRental(rentalObj) {
             } else {
                 // analyze the cause of error
                 response.json()
-                .then( (obj) => {reject(obj);} ) // error msg in the response body
+                .then( (obj) => {reject({...obj, status: response.status});} ) // error msg in the response body
                 .catch( (err) => {reject({ errors: [{ param: "Application", msg: "Cannot parse server response" }] }) }); // something else
                   }
         }).catch( (err) => {reject({ errors: [{ param: "Server", msg: "Cannot communicate" }] }) }); // connection errors
     });
 }
 
+async function checkAuthentication(){
+    let url = "/authentication_control";
+    const response = await fetch(baseURL + url);
+    const userJson = await response.json();
+    if(response.ok){
+        return userJson;
+    } else {
+        let err = {status: response.status, errObj:userJson};
+        throw err;  // An object with the error coming from the server
+    }
+}
 
-const API = { login, logout, getPublicCars, getPrivateCars, getRentals, checkPayment, deleteRental, recordRental };
+const API = { login, logout, getPublicCars, getPrivateCars, getRentals, checkPayment, deleteRental, recordRental, checkAuthentication };
 export default API;

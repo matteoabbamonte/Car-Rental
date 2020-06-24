@@ -24,10 +24,10 @@ class RentalHistory extends React.Component {
     }
 
     loadRentals() {
-        this.setState({rentals: 'loading'})
+        this.setState({ rentals: 'loading' })
         API.getRentals(true)
             .then((rentals) => { this.setState({ rentals: rentals, selectedRental: '' }) })
-            .catch(() => this.setState({ rentals: [], selectedRental: '' }));
+            .catch((err) => {this.props.handleAuthFailure(err)});
     }
 
     deleteRental = () => {
@@ -36,8 +36,7 @@ class RentalHistory extends React.Component {
                 this.setDeletionPopUp();
                 this.loadRentals();
                 this.setState({ selectedRental: '' })
-            })
-            .catch(() => this.setState({ selectedRental: '' }))
+            }).catch((err) => {this.props.handleAuthFailure(err)});
     }
 
     setDeletionPopUp = (selectedRental) => {
@@ -50,10 +49,10 @@ class RentalHistory extends React.Component {
             <div className="d-flex justify-content-between">
                 <DeletionPopUp show={this.state.deletionPopUp} deleteRental={this.deleteRental} setDeletionPopUp={this.setDeletionPopUp} />
                 <RentalsTable past={true}
-                    rentals={this.state.rentals==='loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isBefore(moment()))}
+                    rentals={this.state.rentals === 'loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isBefore(moment()))}
                     colors={this.props.colors} />
                 <RentalsTable past={false}
-                    rentals={this.state.rentals==='loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isAfter(moment()))}
+                    rentals={this.state.rentals === 'loading' ? this.state.rentals : this.state.rentals.filter((r) => moment(r.endDate).isAfter(moment()))}
                     colors={this.props.colors}
                     setDeletionPopUp={this.setDeletionPopUp} />
             </div>
@@ -135,22 +134,22 @@ const SingleFakeRow = () => {
 
 const FakeRows = () => {
     return (<>
-        <SingleFakeRow/>
-        <SingleFakeRow/>
-        <SingleFakeRow/>
-        <SingleFakeRow/>
-        <SingleFakeRow/>
+        <SingleFakeRow />
+        <SingleFakeRow />
+        <SingleFakeRow />
+        <SingleFakeRow />
+        <SingleFakeRow />
     </>)
 }
 
 const RentalsTable = (props) => {
     return (<div className="my-5 mx-auto col-6">
         <div className={props.past ? "badge badge-primary" : "badge badge-success"}>
-            {props.rentals!=="loading" && props.rentals.length===0 ? <h4>No rental available in this section</h4> : <h4>
+            {props.rentals !== "loading" && props.rentals.length === 0 ? <h4>No rental available in this section</h4> : <h4>
                 {props.past ? "Your previous rentals:" : "Your future rentals:"}
             </h4>}
         </div>
-        {(props.rentals!=="loading" && props.rentals.length===0) || <div className="scrollRentalsTable">
+        {(props.rentals !== "loading" && props.rentals.length === 0) || <div className="scrollRentalsTable">
             <table className="table table-hover table-dark text-center" id="carTable">
                 <thead>
                     <tr>
@@ -169,16 +168,17 @@ const RentalsTable = (props) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {(props.rentals === "loading" && <FakeRows />) || props.rentals.map((r) => !props.past ? <FutureRentalRow key={r.carId + r.startDate + r.endDate}
-                        colors={props.colors}
-                        rental={r}
-                        setDeletionPopUp={props.setDeletionPopUp} /> :
+                    {(props.rentals === "loading" && <FakeRows />) || (props.rentals.map((r) => (moment(r.startDate).isAfter(moment())) ?       //not only rentals in the past but also rentals that are and not finished yet
+                        <FutureRentalRow key={r.carId + r.startDate + r.endDate}
+                            colors={props.colors}
+                            rental={r}
+                            setDeletionPopUp={props.setDeletionPopUp} /> :
                         <PastRentalRow key={r.carId + r.startDate + r.endDate}
                             colors={props.colors}
-                            rental={r} />)}
+                            rental={r} />))}
                 </tbody>
             </table>
-        </div> }
+        </div>}
     </div>)
 }
 

@@ -90,8 +90,9 @@ class PaymentForm extends React.Component {
                     API.recordRental(this.props.rentalObj).then(() => {
                         this.setState({ paymentStatus: true, reservedCar: this.props.rentalObj.car })
                     })
-                }).catch(() => {
-                    this.setState({ paymentStatus: "error" })
+                }).catch((err) => {
+                    this.setState({ paymentStatus: "error" });
+                    this.props.handleAuthFailure(err);
                 })
         } else {
             this.setState({ dataError: true })

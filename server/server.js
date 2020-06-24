@@ -16,8 +16,7 @@ app.use(morgan('tiny'));
 // Process body content
 app.use(express.json());
 
-const expireTime = 60 * 60 * 24 * 7; //seconds
-
+const expireTime = 300;
 
 // Authentication endpoint
 app.post('/api/login', (req, res) => {
@@ -51,7 +50,7 @@ app.get('/api/cars', (req, res) => {
   const categories = req.query.categories.split("_");
   const brands = req.query.brands.split("_");
   dao.getCarsByCategoryAndBrand(categories, brands)
-    .then((task) => { res.json(task); })
+    .then((cars) => { res.json(cars); })
     .catch((err) => {
       res.status(500).json({
         errors: [{ 'msg: ': err }],
@@ -66,6 +65,13 @@ app.use(
     getToken: req => req.cookies.token
   })
 );
+
+app.use(function (err, req, res, next) {
+  if (err.name === 'UnauthorizedError') {
+    res.status(401).json({ 'param': 'Server', 'errorMessage': 'Authentication error' });
+  }
+});
+
 
 //Logged APIs
 
@@ -187,15 +193,27 @@ app.post('/api/record_rental', [
 // Error: returns err
 app.delete('/api/delete', (req, res) => {
   const userID = req.user && req.user.userID;
-  const rentalObj = req.user && {...req.body};
+  const rentalObj = req.user && { ...req.body };
   dao.deleteRental(rentalObj, userID)
     .then(() => res.end())
     .catch((err) => {
-      console.log(err)
       res.status(500).json({
         errors: [{ 'msg: ': err }],
       });
     });
+});
+
+//GET /user
+app.get('/api/authentication_control', (req, res) => {
+  const id = req.user && req.user.userID;
+  dao.getUserById(id)
+    .then((user) => {
+      res.json({ id: user.userId, name: user.userName });
+    }).catch(
+      (err) => {
+        res.status(401).json({ 'param': 'Server', 'msg': 'Authorization error' });
+      }
+    );
 });
 
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}/`));

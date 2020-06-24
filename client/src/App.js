@@ -11,6 +11,7 @@ import Login from './components/Login';
 import PaymentForm from './components/PaymentForm';
 import RentalHistory from './components/RentalHistory';
 import './background.css'
+import Spinner from 'react-bootstrap/Spinner';
 
 const colorsVec = ["primary", "secondary", "success", "danger", "warning", "info", "dark"];
 let i = 0;
@@ -31,16 +32,24 @@ class App extends React.Component {
       modifiersVec: [],
       rentals: [],
       user: {},
-      period: []
+      period: [],
+      loading: false
     }
   }
 
   componentDidMount() {
-    this.loadInitialData();
+    API.checkAuthentication().then(
+      (userObj) => {
+        this.setState({ logged: true, user: userObj, public: false, loading: false });
+        this.loadInitialData();
+      }
+    ).catch((err) => {
+      this.logout();
+    });
   }
 
-  loadInitialData() {
-    this.setState({cars: 'loading'});
+  loadInitialData = () => {
+    this.setState({ cars: 'loading' });
     API.getPublicCars(null, null).then((cars) => {
       var brands = [];
       var categories = [];
@@ -57,15 +66,34 @@ class App extends React.Component {
           i = 0;
         }
       });
-
-      this.setState({ brands: brands, categories: categories, colors: colors, cars: cars, totCars: cars.length });
+      this.setState({
+        brands: brands,
+        categories: categories,
+        colors: colors,
+        cars: cars,
+        totCars: cars.length,
+        currentPrice: 0,
+        modifiers: [],
+        modifiersVec: [],
+        rentals: [],
+        period: []
+      });
     });
   }
 
+  handleAuthFailure = (err) => {
+    if (err) {
+      if (err.status && err.status === 401) {
+        this.setState({ authErr: err.errorObj });
+        this.logout();
+      }
+    }
+  }
+
   getFilteredCars = (category, brand) => {
-    this.setState({cars: 'loading'});
+    this.setState({ cars: 'loading' });
     API.getPublicCars(category, brand).then((cars) => {
-      this.setState({ cars: cars })
+      this.setState({ cars: cars, totCars: cars.length })
     })
   }
 
@@ -92,6 +120,7 @@ class App extends React.Component {
           user: {},
           period: []
         })
+        this.loadInitialData()
       }
     );
   }
@@ -100,14 +129,14 @@ class App extends React.Component {
     if (this.state.rentals.length == 0) {
       API.getRentals(false).then((rentals) => {
         this.setState({ rentals: rentals });
-      })
+      }).catch((err) => this.handleAuthFailure(err))
     }
   }
 
 
   filterRental = (category, period) => {
     this.getRentals(false);
-    this.setState({cars: 'loading'});
+    this.setState({ cars: 'loading' });
     API.getPrivateCars(category, period).then((cars) => {
       var modifiers = this.state.modifiers;
       var modifiersVec = this.state.modifiersVec;
@@ -148,9 +177,9 @@ class App extends React.Component {
         for (var factor of this.state.modifiers) {
           price = price * factor;
         }
-        this.setState({ currentPrice: Math.round(price * 100) / 100, cars: cars, period: period });
+        this.setState({ currentPrice: Math.round(price * 100) / 100, cars: cars, period: period, totCars: cars.length });
       }
-    })
+    }).catch((err) => this.handleAuthFailure(err))
   }
 
   modifyPrice = (modifier) => {
@@ -187,17 +216,17 @@ class App extends React.Component {
   }
 
   render() {
-    return (
+    return (<>
       <div className="background container-fluid">
         <Router>
-          <Navbar logged={this.state.logged} />
+          <Navbar logout={this.logout}
+            logged={this.state.logged} />
 
           <Switch>
 
             <Route path="/login" render={() => {
               return (
                 <Login afterLogin={this.afterLogin}
-                  logout={this.logout}
                   logged={this.state.logged}
                   public={this.state.public} />
               )
@@ -223,15 +252,19 @@ class App extends React.Component {
                   <Configurator logged={this.state.logged}
                     filterRental={this.filterRental}
                     modifyPrice={this.modifyPrice} />
-                  <div className="mr-4 col-5">
-                    <PriceDashboard currentPrice={this.state.currentPrice}
-                      numCars={this.state.cars.length}
-                      checkForm={this.checkForm} />
-                    <CarTable logged={this.state.logged}
+                  <div className={!(this.state.cars !== "loading" && this.state.totCars === 0) ?
+                    "mr-4 col-5" :
+                    "mx-auto col-5 d-flex align-items-center"}>
+                    <PriceDashboard loadInitialData={this.loadInitialData}
+                      currentPrice={this.state.currentPrice}
+                      numCars={this.state.totCars}
+                      checkForm={this.checkForm}
+                      isStateClean={this.state.modifiersVec.length <= 2} />
+                    {(this.state.cars !== "loading" && this.state.totCars === 0) || <CarTable logged={this.state.logged}
                       cars={this.state.cars}
                       colors={this.state.colors}
                       public={false}
-                      checkForm={this.checkForm} />
+                      checkForm={this.checkForm} />}
                   </div>
                 </div>)
             }} />
@@ -243,23 +276,24 @@ class App extends React.Component {
                   freqCust={this.state.rentals.filter(rental => (moment(rental.end_date).isBefore(moment())))}
                   currentPrice={this.state.currentPrice}
                   colors={this.state.colors}
+                  handleAuthFailure={this.handleAuthFailure}
                   rentalObj={{ car: this.state.cars[0], startDate: moment(this.state.period[0]).format('YYYY-MM-DD'), endDate: moment(this.state.period[1]).format('YYYY-MM-DD'), price: this.state.currentPrice }} />}
               </>)
             }} />
 
             <Route path="/history" render={() => {
               return (<>
-                {this.state.logged && <RentalHistory colors={this.state.colors} />}
+                {this.state.logged && <RentalHistory colors={this.state.colors} handleAuthFailure={this.handleAuthFailure} />}
               </>)
             }} />
 
           </Switch>
 
-          <Redirect from="/" to="/public" />
+          {this.state.public && !this.state.logged && <Redirect to="/public" />}
 
         </Router>
       </div>
-    )
+    </>)
   }
 
 }

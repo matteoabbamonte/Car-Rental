@@ -124,9 +124,30 @@ exports.checkPassword = function (email, pass) {
     });
 }
 
+exports.getUserById = function (id) {
+    return new Promise((resolve, reject) => {
+        const sql = 'SELECT id, name FROM User WHERE id = ?';
+        db.all(sql, [id], (err, rows) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+            if (rows.length === 0) {
+                reject(null);
+                return;
+            }
+            resolve({
+                userId: rows[0].id,
+                userName: rows[0].name,
+            });
+        });
+    });
+};
+
+
 exports.getRentals = function (extended, userId) {
     var query;
-    if (extended==='true') {
+    if (extended === 'true') {
         query = 'SELECT brand, model, start_date, end_date, Rental.price FROM Car, Rental WHERE user_id=? AND car_id=id';
     } else {
         query = 'SELECT * FROM Rental WHERE user_id=?';
@@ -138,7 +159,7 @@ exports.getRentals = function (extended, userId) {
                 reject(err);
                 return;
             }
-            let rentals = rows.map((r) => ({...r}));
+            let rentals = rows.map((r) => ({ ...r }));
             resolve(rentals);
         });
     });
