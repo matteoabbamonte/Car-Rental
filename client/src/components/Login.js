@@ -21,7 +21,6 @@ class Login extends React.Component {
     }
 
     componentDidMount() {
-        this.props.logout();
         this.setState({email: 'matteo@email.com',
         password: 'passwordmatteo',
         loginError: false,

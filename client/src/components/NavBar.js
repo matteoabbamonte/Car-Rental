@@ -1,13 +1,21 @@
 import React from 'react';
 import Card from 'react-bootstrap/Card';
 import Dropdown from 'react-bootstrap/Dropdown';
-import { Link } from 'react-router-dom';
+import Button from 'react-bootstrap/Button';
+import { Redirect } from 'react-router-dom';
 
 
 class Navbar extends React.Component {
+    constructor() {
+        super()
+        this.state = {
+            destination: ''
+        }
+    }
 
     render() {
-        return (
+        return (<>
+        {this.state.destination && <Redirect to={this.state.destination}/>}
             <nav className="row navbar-fluid d-flex justify-content-between navbar-dark bg-dark">
                 <div className="nav-item nav-link my-auto">
 
@@ -28,25 +36,27 @@ class Navbar extends React.Component {
                             <Dropdown.Menu >
                                 {!this.props.public &&
                                     <Dropdown.Item>
-                                        <Link to="/public">Our cars</Link>
+                                        <Button variant="outline-primary" size="sm" block onClick={() => this.setState({destination: "/public"})}>Our cars</Button>
                                     </Dropdown.Item>}
                                 <Dropdown.Item>
-                                    <Link to="/login" >{this.props.logged === true ? "Log out" : "Log in"}</Link>
+                                    <Button variant="outline-primary" size="sm" block onClick={() => {
+                                        this.props.logout();
+                                        this.setState({destination: this.props.logged === true ? "/" : "/login"})}} >{this.props.logged === true ? "Log out" : "Log in"}</Button>
                                 </Dropdown.Item>
                                 {this.props.logged &&
                                     <Dropdown.Item>
-                                        <Link to="/configure">Configure a rental</Link>
+                                        <Button variant="outline-primary" size="sm" block onClick={() => this.setState({destination: "/configure"})}>Configure a rental</Button>
                                     </Dropdown.Item>}
                                 {this.props.logged &&
                                     <Dropdown.Item>
-                                        <Link to="/history">My rentals</Link>
+                                        <Button variant="outline-primary" size="sm" block onClick={() => this.setState({destination: "/history"})}>My rentals</Button>
                                     </Dropdown.Item>}
                             </Dropdown.Menu>
                         </Dropdown>
                     </li>
                 </ul>
             </nav>
-        );
+        </>);
     }
 }
 
