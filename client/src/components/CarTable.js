@@ -6,15 +6,16 @@ import { TextRow } from 'react-placeholder/lib/placeholders';
 
 class CarTable extends React.Component {
 
+
     render() {
-        return (
-            <div bg="dark" className={this.props.public ?
-                "mx-auto col-8 text-dark scrollInitialTable" :
-                this.props.checkForm() ?
-                    "text-dark scrollLoggedTableButton" :
-                    "text-dark scrollLoggedTable"}>
-                {this.props.cars !== "loading" && this.props.cars.length === 0 ?
-                    <span className="badge badge-danger col my-5"><h4>No cars available with these filters</h4></span> :
+        return (<>
+            {(this.props.cars !== "loading" && this.props.cars.length === 0) ?
+                <span className="badge badge-danger col my-5"><h4>No cars available with these filters</h4></span> :
+                <div bg="dark" className={this.props.public ?
+                    "mx-auto col-8 text-dark scrollInitialTable" :
+                    this.props.checkForm() ?
+                        "text-dark scrollLoggedTableButton" :
+                        "text-dark scrollLoggedTable"}>
                     <table className="table table-hover table-dark text-center" id="carTable">
                         <thead>
                             <tr>
@@ -45,9 +46,9 @@ class CarTable extends React.Component {
                                 logged={this.props.logged} />)
                             }
                         </tbody>
-                    </table>}
-            </div >
-        )
+                    </table>
+                </div >}
+        </>)
     }
 
 }
