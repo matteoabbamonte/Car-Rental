@@ -170,9 +170,16 @@ app.post('/api/record_rental', [
   check('carId').isInt(),
   check('price').isNumeric()
 ], (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
+  const errors = validationResult(req).array();
+  if (moment(req.body.startDate).isSameOrAfter(req.body.startDate)) {
+    errors.push({
+      msg: "endDate must follow startDate",
+      params: "endDate, startDate",
+      location: "body"
+    });
+  }
+  if (errors.length!=0) {
+    return res.status(422).json({ errors: errors });
   }
   const rentalObj = req.user && {
     userId: req.user.userID,
