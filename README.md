@@ -62,9 +62,9 @@
 
 ## Server database
 
-- Table `users` - contains xx yy zz
-- Table `something` - contains ww qq ss
-- ...
+- Table `car` - contains: id brand model category seats fuel price
+- Table `rental` - contains: car_id user_id start_date end_date price
+- Table `user` - contains: id email password name surname age
 
 ## Main React Components
 
@@ -76,7 +76,11 @@
 
 ## Screenshot
 
-![Configurator Screenshot](./img/screenshot.jpg)
+#### Empty Configurator
+![Empty Configurator Screenshot](./img/emptyConfigurator.jpg)
+
+#### Filled Configurator
+![Filled Configurator Screenshot](./img/filledConfigurator.jpg)
 
 ## Test users
 
