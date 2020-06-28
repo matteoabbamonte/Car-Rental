@@ -5,7 +5,9 @@ const jsonwebtoken = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const moment = require('moment');
 const { check, validationResult } = require('express-validator');
-const dao = require('./dao.js');
+const carDao = require('./carDao.js');
+const userDao = require('./userDao.js');
+const rentalDao = require('./rentalDao.js');
 const jwtSecret = "6A91A1C91CD7DD7C7E2816C49C150ED9A1C775FEC7D88352A998E0F0FA86B1AA";
 
 const app = express();
@@ -23,7 +25,7 @@ app.post('/api/login', (req, res) => {
   const username = req.body.email;
   const password = req.body.password;
 
-  dao.checkPassword(username, password).then((user) => {
+  userDao.checkPassword(username, password).then((user) => {
     //AUTHENTICATION SUCCESS
     const token = jsonwebtoken.sign({ userID: user.userId }, jwtSecret, { expiresIn: expireTime });
     res.cookie('token', token, { httpOnly: true, sameSite: true, maxAge: 1000 * expireTime });
@@ -49,7 +51,7 @@ app.post('/api/logout', (req, res) => {
 app.get('/api/cars', (req, res) => {
   const categories = req.query.categories.split("_");
   const brands = req.query.brands.split("_");
-  dao.getCarsByCategoryAndBrand(categories, brands)
+  carDao.getCarsByCategoryAndBrand(categories, brands)
     .then((cars) => { res.json(cars); })
     .catch((err) => {
       res.status(500).json({
@@ -86,7 +88,7 @@ app.get('/api/configure', (req, res) => {
     if (!dateControl) {
       return res.status(422).json({ errors: [{ 'msg: ': 'Wrong dates' }] });
     }
-    dao.getCarsByCategoryAndPeriod(req.query.category, period)
+    carDao.getCarsByCategoryAndPeriod(req.query.category, period)
       .then((cars) => { res.json(cars); })
       .catch((err) => {
         res.status(500).json({
@@ -99,7 +101,7 @@ app.get('/api/configure', (req, res) => {
     if (!dateControl) {
       return res.status(422).json({ errors: [{ 'msg: ': 'Wrong dates' }] });
     }
-    dao.getCarsByPeriod(period)
+    carDao.getCarsByPeriod(period)
       .then((cars) => { res.json(cars); })
       .catch((err) => {
         res.status(500).json({
@@ -107,7 +109,7 @@ app.get('/api/configure', (req, res) => {
         });
       });
   } else if (req.user) {
-    dao.getCarsByCategoryAndBrand(req.query.category, "none")
+    carDao.getCarsByCategoryAndBrand(req.query.category, "none")
       .then((cars) => { res.json(cars); })
       .catch((err) => {
         res.status(500).json({
@@ -131,7 +133,7 @@ app.get('/api/rentals', [
   }
   var extended = req.query.extended;
   var userId = req.user && req.user.userID;
-  dao.getRentals(extended, userId)
+  rentalDao.getRentals(extended, userId)
     .then((rentals) => { res.json(rentals); })
     .catch((err) => {
       res.status(500).json({
@@ -171,37 +173,64 @@ app.post('/api/record_rental', [
   check('price').isNumeric()
 ], (req, res) => {
   const errors = validationResult(req).array();
-  if (moment(req.body.startDate).isSameOrAfter(req.body.startDate)) {
+  if (moment(req.body.startDate).isSameOrAfter(req.body.endDate)) {
     errors.push({
       msg: "endDate must follow startDate",
       params: "endDate, startDate",
       location: "body"
     });
   }
-  if (errors.length!=0) {
-    return res.status(422).json({ errors: errors });
-  }
-  const rentalObj = req.user && {
-    userId: req.user.userID,
-    carId: req.body.carId,
-    startDate: req.body.startDate,
-    endDate: req.body.endDate,
-    price: req.body.price
-  };
-  dao.registerRental(rentalObj)
-    .then((response) => res.end())
-    .catch((err) => res.status(503).json({
-      errors: [{ 'param': 'Server', 'msg': 'Database error' }],
-    }));
+  carDao.carExistsAndFree(req.body).then((response) => {
+    if (!response) {
+      errors.push({
+        msg: "The specified ID is not available",
+        params: "carId",
+        location: "body"
+      });
+      return res.status(422).json({ errors: errors });
+    } else {
+      if (errors.length != 0) {
+        return res.status(422).json({ errors: errors });
+      }
+      const rentalObj = req.user && {
+        userId: req.user.userID,
+        carId: req.body.carId,
+        startDate: req.body.startDate,
+        endDate: req.body.endDate,
+        price: req.body.price
+      };
+      rentalDao.registerRental(rentalObj)
+        .then((response) => res.end())
+        .catch((err) => res.status(503).json({
+          errors: [{ 'param': 'Server', 'msg': 'Database error' }],
+        }));
+    }
+  }).catch((err) => res.status(503).json({
+    errors: [{ 'param': 'Server', 'msg': 'Early Database error' }],
+  }));
 });
 
 // DELETE /delete
 // Response body: list of rentals, without the one that must be deleted
 // Error: returns err
-app.delete('/api/delete', (req, res) => {
+app.delete('/api/delete', [
+  check('startDate').isAfter(moment().format('YYYY-MM-DD')),
+  check('endDate').isAfter(moment().format('YYYY-MM-DD')),
+], (req, res) => {
+  const errors = validationResult(req).array();
+  if (moment(req.body.startDate).isSameOrAfter(req.body.endDate)) {
+    errors.push({
+      msg: "endDate must follow startDate",
+      params: "endDate, startDate",
+      location: "body"
+    });
+  }
+  if (errors.length != 0) {
+    return res.status(422).json({ errors: errors });
+  }
   const userID = req.user && req.user.userID;
   const rentalObj = req.user && { ...req.body };
-  dao.deleteRental(rentalObj, userID)
+  rentalDao.deleteRental(rentalObj, userID)
     .then(() => res.end())
     .catch((err) => {
       res.status(500).json({
@@ -213,7 +242,7 @@ app.delete('/api/delete', (req, res) => {
 //GET /user
 app.get('/api/authentication_control', (req, res) => {
   const id = req.user && req.user.userID;
-  dao.getUserById(id)
+  userDao.getUserById(id)
     .then((user) => {
       res.json({ id: user.userId, name: user.userName });
     }).catch(

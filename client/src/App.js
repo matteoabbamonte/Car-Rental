@@ -11,7 +11,6 @@ import Login from './components/Login';
 import PaymentForm from './components/PaymentForm';
 import RentalHistory from './components/RentalHistory';
 import './background.css'
-import Spinner from 'react-bootstrap/Spinner';
 
 const colorsVec = ["primary", "secondary", "success", "danger", "warning", "info", "dark"];
 let i = 0;
@@ -22,6 +21,7 @@ class App extends React.Component {
     this.state = {
       cars: [],
       totCars: 0,
+      carNumbers: {},
       brands: [],
       categories: [],
       colors: {},
@@ -38,40 +38,54 @@ class App extends React.Component {
   }
 
   componentDidMount() {
+    //on load/reload page: checking whether the user is already authenticated
     API.checkAuthentication().then(
       (userObj) => {
+        //authenticated user: gain fundamental user and session info by using the jwt token and reload data
         this.setState({ logged: true, user: userObj, public: false, loading: false });
         this.loadInitialData();
       }
     ).catch((err) => {
+      //if not, logout
       this.logout();
     });
   }
 
   loadInitialData = () => {
     this.setState({ cars: 'loading' });
+    //getting all cars in database: same as the public table -> neither brand nor color specified
     API.getPublicCars(null, null).then((cars) => {
       var brands = [];
       var categories = [];
+      var carNumbers = {};
       var colors = {};
+      //listing every brand and category for the current car list
       for (const c of cars) {
         brands.push(c.brand);
         categories.push(c.category);
       }
+      //brands will contain just one occurence for each car brand
       brands = [...new Set(brands)];
+      //categories will contain just one occurence for each car category
       categories = [...new Set(categories)];
+      //assigning random color badge to each brand
       brands.forEach((brand) => {
         colors[brand] = colorsVec[i++];
         if (i === colorsVec.length) {
           i = 0;
         }
       });
+      //calculating the number of cars for each category
+      categories.forEach((category) => {
+        carNumbers[category] = cars.filter((c) => c.category === category).length;
+      })
       this.setState({
         brands: brands,
         categories: categories,
         colors: colors,
         cars: cars,
         totCars: cars.length,
+        carNumbers: carNumbers,
         currentPrice: 0,
         modifiers: [],
         modifiersVec: [],
@@ -82,6 +96,7 @@ class App extends React.Component {
   }
 
   handleAuthFailure = (err) => {
+    //function for handling an "unauthorised operation" due to the token expiration
     if (err) {
       if (err.status && err.status === 401) {
         this.setState({ authErr: err.errorObj });
@@ -98,6 +113,7 @@ class App extends React.Component {
   }
 
   afterLogin = (userObj) => {
+    //propagation of the real login operation executed within the so-called component
     this.setState({ logged: true, user: userObj, public: false });
     this.loadInitialData();
   }
@@ -106,19 +122,9 @@ class App extends React.Component {
     API.logout().then(
       () => {
         this.setState({
-          cars: [],
-          totCars: 0,
-          brands: [],
-          categories: [],
-          colors: {},
           logged: false,
           public: true,
-          currentPrice: 0,
-          modifiers: [],
-          modifiersVec: [],
-          rentals: [],
           user: {},
-          period: []
         })
         this.loadInitialData()
       }
@@ -126,7 +132,8 @@ class App extends React.Component {
   }
 
   getRentals = () => {
-    if (this.state.rentals.length == 0) {
+    //getting simple rental info (extended=false)
+    if (this.state.rentals.length === 0) {
       API.getRentals(false).then((rentals) => {
         this.setState({ rentals: rentals });
       }).catch((err) => this.handleAuthFailure(err))
@@ -135,19 +142,25 @@ class App extends React.Component {
 
 
   filterRental = (category, period) => {
+    //function for calculating price and getting info on the available cars in real-time
     this.getRentals(false);
     this.setState({ cars: 'loading' });
+    //getting info on the available cars, depending on selected category and period
     API.getPrivateCars(category, period).then((cars) => {
       var modifiers = this.state.modifiers;
       var modifiersVec = this.state.modifiersVec;
       var rentals = this.state.rentals;
+      //selecting only the past rentals in order to understand whether the user is frequent or not
       rentals.filter(rental => (moment(rental.end_date).isBefore(moment())));
 
+      //insert or update of the "Frequent customer" modifier
       if (modifiersVec.includes("freqCust")) {
         if (rentals.length >= 3) {
+          //if there are >=3 past rentals for the user -> insert discount
           modifiers[modifiersVec.indexOf("freqCust")] = 0.9;
         } else {
-          modifiersVec.splice(modifiersVec.indexOf("freqCust"), 1); // reset the field
+          //if not -> remove the modifier
+          modifiersVec.splice(modifiersVec.indexOf("freqCust"), 1);
           modifiers.splice(modifiersVec.indexOf("freqCust"), 1);
         }
       } else {
@@ -157,38 +170,53 @@ class App extends React.Component {
         }
       }
 
+      //insert or update of the "Less than 10% of cars left" modifier
       if (modifiersVec.includes("carsNumber")) {
-        if (cars.length / this.state.totCars < 0.1) {
+        if (cars.length / this.state.carNumbers[category] < 0.1) {
+          //if there are less than 10% of cars left -> insert surcharcge
           modifiers[modifiersVec.indexOf("carsNumber")] = 1.1;
         } else {
-          modifiersVec.splice(modifiersVec.indexOf("carsNumber"), 1); // reset the field
+          //if not -> remove the modifier
+          modifiersVec.splice(modifiersVec.indexOf("carsNumber"), 1);
           modifiers.splice(modifiersVec.indexOf("carsNumber"), 1);
         }
       } else {
-        if (cars.length / this.state.totCars < 0.1) {
+        if (cars.length / this.state.carNumbers[category] < 0.1) {
           modifiers.push(1.1);
           modifiersVec.push("carsNumber");
         }
 
       }
 
+      var price;
+      //if a category is specified the base price can be multiplied for every modifier
       if (category) {
-        var price = cars[0] ? cars[0].price : 0;
+        //if there is at least one available car select its base price and execute the multiplication
+        price = cars[0] ? cars[0].price : 0;
         for (var factor of this.state.modifiers) {
           price = price * factor;
         }
-        this.setState({ currentPrice: Math.round(price * 100) / 100, cars: cars, period: period, totCars: cars.length });
+        price = Math.round(price * 100) / 100;
+      } else {
+        price = 0;
       }
+      this.setState({ currentPrice: price, cars: cars, period: period, totCars: cars.length });
+
     }).catch((err) => this.handleAuthFailure(err))
   }
 
-  modifyPrice = (modifier) => {
+  modifyPrice = (modifier) => {     //modifier[0]: name, modifier[1]: value 
+    //this function handles the user inserted modifiers
     var modifiers = this.state.modifiers;
     var modifiersVec = this.state.modifiersVec;
+    
+    //insert or update of a general modifier
     if (modifiersVec.includes(modifier[0])) {
-      if (modifier[1] != 0) {
+      if (modifier[1] !== 0) {
+        //if the modifier has been CHANGED without deleting it -> update the modifier in the vector
         modifiers[modifiersVec.indexOf(modifier[0])] = modifier[1];
       } else {
+        //if the modifier has been DELETED -> remove the modifier from the vector
         modifiers.splice(modifiersVec.indexOf(modifier[0]), 1);
         modifiersVec.splice(modifiersVec.indexOf(modifier[0]), 1);
       }
@@ -196,6 +224,7 @@ class App extends React.Component {
       modifiersVec.push(modifier[0]);
       modifiers.push(modifier[1]);
     }
+    //re-compute the final price for every modifier
     var price = this.state.cars[0].price
     for (var factor of modifiers) {
       price = price * factor;
@@ -204,6 +233,7 @@ class App extends React.Component {
   }
 
   checkForm = () => {
+    //checking whether the form has been fully compiled
     if (this.state.currentPrice > 0 &&                    //it means that a category has been selected
       this.state.period &&                                //control over the period spec
       this.state.modifiersVec.includes("km") &&
@@ -224,6 +254,7 @@ class App extends React.Component {
 
           <Switch>
 
+
             <Route path="/login" render={() => {
               return (
                 <Login afterLogin={this.afterLogin}
@@ -232,6 +263,7 @@ class App extends React.Component {
               )
             }}>
             </Route>
+
 
             <Route path="/public" render={() => {
               return (<>
@@ -246,12 +278,15 @@ class App extends React.Component {
             }
             } />
 
+
             <Route path="/configure" render={() => {
               return (
                 <div className="row justify-content-between">
                   <Configurator logged={this.state.logged}
                     filterRental={this.filterRental}
                     modifyPrice={this.modifyPrice} />
+
+                    {/* if there are no cars available then center the position of the price dashboard with its message */}
                   <div className={!(this.state.cars !== "loading" && this.state.totCars === 0) ?
                     "mr-4 col-5" :
                     "mx-auto col-5 d-flex align-items-center"}>
@@ -260,6 +295,8 @@ class App extends React.Component {
                       numCars={this.state.totCars}
                       checkForm={this.checkForm}
                       isStateClean={this.state.modifiersVec.length <= 2} />
+
+                      {/* show the table only if there are available cars */}
                     {(this.state.cars !== "loading" && this.state.totCars === 0) || <CarTable logged={this.state.logged}
                       cars={this.state.cars}
                       colors={this.state.colors}
@@ -268,6 +305,7 @@ class App extends React.Component {
                   </div>
                 </div>)
             }} />
+
 
             <Route path="/payment" render={() => {
               return (<>
@@ -281,11 +319,13 @@ class App extends React.Component {
               </>)
             }} />
 
+
             <Route path="/history" render={() => {
               return (<>
                 {this.state.logged && <RentalHistory colors={this.state.colors} handleAuthFailure={this.handleAuthFailure} />}
               </>)
             }} />
+
 
           </Switch>
 

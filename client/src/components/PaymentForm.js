@@ -28,6 +28,10 @@ class PaymentForm extends React.Component {
         this.loadInitialState();
     }
 
+    handleClose = () => {
+        this.setState({ paymentStatus: false })
+    }
+
     loadInitialState = () => {
         this.setState({
             cardHolder: '',
@@ -51,7 +55,7 @@ class PaymentForm extends React.Component {
                 break;
             case "cardNumber":
                 var tempCard = value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim();
-                this.setState({tempCard: tempCard})
+                this.setState({ tempCard: tempCard })
                 if (tempCard.length === 19) {
                     this.setState({
                         cardNumber: tempCard
@@ -68,11 +72,14 @@ class PaymentForm extends React.Component {
                 }
                 break;
             case "cvv":
-                if (value.length === 3) {
+                if (value.length === 3 && /^[0-9]+$/.test(value)) {
                     this.setState({ cvv: value });
                 } else {
                     this.setState({ cvv: '' });
                 }
+                break;
+            default:
+                console.log(type)
         }
     }
 
@@ -89,6 +96,9 @@ class PaymentForm extends React.Component {
                 this.state.cvv).then(() => {
                     API.recordRental(this.props.rentalObj).then(() => {
                         this.setState({ paymentStatus: true, reservedCar: this.props.rentalObj.car })
+                    }).catch((err) => {
+                        this.setState({ paymentStatus: "error" });
+                        this.props.handleAuthFailure(err);
                     })
                 }).catch((err) => {
                     this.setState({ paymentStatus: "error" });
@@ -106,8 +116,8 @@ class PaymentForm extends React.Component {
             </div>
         } else {
             return (<>
-                <SuccessPopUp paymentStatus={this.state.paymentStatus} reservedCar={this.state.reservedCar} colors={this.props.colors} />
-                <ErrorPopUp paymentStatus={this.state.paymentStatus} loadInitialState={this.loadInitialState} />
+                <SuccessPopUp paymentStatus={this.state.paymentStatus} reservedCar={this.state.reservedCar} colors={this.props.colors} handleClose={this.handleClose} />
+                <ErrorPopUp paymentStatus={this.state.paymentStatus} loadInitialState={this.loadInitialState} handleClose={this.handleClose} />
                 <Card
                     className="my-4 col-8 mx-auto"
                     bg="dark"
@@ -127,23 +137,23 @@ class PaymentForm extends React.Component {
                             <div className="col-6">
                                 <Form.Group controlId="cardHolder">
                                     <Form.Label><span className="badge badge-light">Card holder:</span></Form.Label>
-                                    <Form.Control type="text" placeholder="Name Surname" onChange={event => { this.pushField("cardHolder", event.target.value) }} />
+                                    <Form.Control type="text" placeholder="Name Surname" onChange={event => { this.pushField("cardHolder", event.target.value) }} required />
                                 </Form.Group>
 
                                 <Form.Group controlId="cardNumber">
                                     <Form.Label><span className="badge badge-light">Card number:</span></Form.Label>
-                                    <Form.Control type="tel" placeholder="XXXX XXXX XXXX XXXX" value={this.state.tempCard} onChange={event => { this.pushField("cardNumber", event.target.value) }} />
+                                    <Form.Control type="text" placeholder="XXXX XXXX XXXX XXXX" value={this.state.tempCard || ''} onChange={event => { this.pushField("cardNumber", event.target.value) }} required/>
                                 </Form.Group>
 
                                 <Form.Row >
                                     <Form.Group controlId="month" className="col">
                                         <Form.Label><span className="badge badge-light">Month:</span></Form.Label>
-                                        <Form.Control type="month" onChange={event => { this.pushField("month", event.target.value) }} />
+                                        <Form.Control type="month" onChange={event => { this.pushField("month", event.target.value) }} required/>
                                     </Form.Group>
 
                                     <Form.Group controlId="cvv" className="col">
                                         <Form.Label><span className="badge badge-light">CVV</span></Form.Label>
-                                        <Form.Control type="tel" placeholder="CVV" onChange={event => { this.pushField("cvv", event.target.value) }} />
+                                        <Form.Control type="text" placeholder="CVV" onChange={event => { this.pushField("cvv", event.target.value) }} required/>
                                     </Form.Group>
                                 </Form.Row>
                             </div>
@@ -167,7 +177,7 @@ class PaymentForm extends React.Component {
                             </span>
                             <span className="badge badge-success mr-1 my-2">
                                 <h6 className="my-0">
-                                    {this.props.currentPrice * moment(this.props.rentalObj.endDate).diff(moment(this.props.rentalObj.startDate), 'days')}€
+                                    {Math.round(this.props.currentPrice * moment(this.props.rentalObj.endDate).diff(moment(this.props.rentalObj.startDate), 'days') * 100) / 100}€
                             </h6>
                             </span>
                             <Button className="ml-3" onClick={(ev) => { this.checkPayment() }}>
@@ -184,7 +194,7 @@ class PaymentForm extends React.Component {
 
 const ModifierRow = (props) => {
     return (<>
-        {props.value != 1 &&
+        {props.value !== 1 &&
             <tr>
                 <td>
                     <span className="badge badge-pill badge-light">
@@ -207,22 +217,26 @@ function getDescription(name, value) {
         case "nDrivers":
             return "Additional drivers added";
         case "age":
-            if (value == 1.05) {
+            if (value === 1.05) {
                 return "Main driver age is under 25";
             } else {
                 return "Main driver age is over 65";
             }
         case "km":
-            if (value == 0.85) {
+            if (value === 0.85) {
                 return "Declared estimated kilometers allow you to receive a discount";
             } else {
                 return "Declared estimated kilometers need a surcharge";
             }
+        case "carsNumber":
+            return "Less than 10% of the cars left in the selected period";
+        default:
+            console.log(name)
     }
 }
 
 const SuccessPopUp = (props) => {
-    return <Modal show={props.paymentStatus === true} className="my-5">
+    return <Modal show={props.paymentStatus === true} onHide={props.handleClose} className="my-5" animation={false}>
         <Modal.Header >
             <Modal.Title>The following car has been successfully reserved for you:</Modal.Title>
         </Modal.Header>
@@ -280,7 +294,7 @@ const SuccessPopUp = (props) => {
 }
 
 const ErrorPopUp = (props) => {
-    return <Modal show={props.paymentStatus === "error"} className="my-5">
+    return <Modal show={props.paymentStatus === "error"} onHide={props.handleClose} className="my-5" animation={false}>
         <Modal.Header >
             <Modal.Title>Error:</Modal.Title>
         </Modal.Header>

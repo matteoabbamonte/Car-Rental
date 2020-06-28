@@ -16,45 +16,55 @@ class Navbar extends React.Component {
     render() {
         return (<>
         {this.state.destination && <Redirect to={this.state.destination}/>}
+
             <nav className="row navbar-fluid d-flex justify-content-between navbar-dark bg-dark">
+
                 <div className="nav-item nav-link my-auto">
-
                     <span className="nav-link badge badge-success"><h3>RentCar</h3></span>
-
                 </div>
+
                 <div className="row my-auto">
                     <Logo className="nav-item nav-link mx-auto" />
                 </div>
+
                 <ul className="navbar-nav nav-link flex-row">
                     <li className="nav-item my-auto">{this.props.logged === true ? <Login /> : <Logout />}</li>
                     <li className="nav-item my-auto">
+
                         <Dropdown className="float-right my-2 ">
                             <Dropdown.Toggle variant="dark" id="dropdown-basic" className="p-1">
                                 {this.props.logged === true ? "Logged in" : "Logged out"}
                             </Dropdown.Toggle>
 
                             <Dropdown.Menu >
+
                                 {!this.props.public &&
                                     <Dropdown.Item>
                                         <Button variant="outline-primary" size="sm" block onClick={() => this.setState({destination: "/public"})}>Our cars</Button>
                                     </Dropdown.Item>}
+
                                 <Dropdown.Item>
                                     <Button variant="outline-primary" size="sm" block onClick={() => {
                                         this.props.logout();
                                         this.setState({destination: this.props.logged === true ? "/" : "/login"})}} >{this.props.logged === true ? "Log out" : "Log in"}</Button>
                                 </Dropdown.Item>
+
                                 {this.props.logged &&
                                     <Dropdown.Item>
                                         <Button variant="outline-primary" size="sm" block onClick={() => this.setState({destination: "/configure"})}>Configure a rental</Button>
                                     </Dropdown.Item>}
+
                                 {this.props.logged &&
                                     <Dropdown.Item>
                                         <Button variant="outline-primary" size="sm" block onClick={() => this.setState({destination: "/history"})}>My rentals</Button>
                                     </Dropdown.Item>}
+
                             </Dropdown.Menu>
+
                         </Dropdown>
                     </li>
                 </ul>
+                
             </nav>
         </>);
     }

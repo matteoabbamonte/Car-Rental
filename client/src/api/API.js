@@ -28,11 +28,11 @@ async function getPublicCars(category, brand) {
         brands = brands + "none";
     }
     const response = await fetch(baseURL + "/cars" + categories + brands)
-    const tasksJson = await response.json();
+    const carsJson = await response.json();
     if (response.ok) {
-        return tasksJson.map((ex) => Object.assign(new Car(), ex));
+        return carsJson.map((ex) => Object.assign(new Car(), ex));
     } else {
-        throw tasksJson;  // An object with the error coming from the server
+        throw carsJson;  // An object with the error coming from the server
     }
 }
 
@@ -44,7 +44,7 @@ async function getPrivateCars(category, period) {
     } else {
         catQuery += "none";
     }
-    if (period.length != 0) {
+    if (period.length !== 0) {
         for (var i = 0; i < period.length; i++) {
             if (i === 0) {
                 perQuery += period[i];
@@ -56,11 +56,11 @@ async function getPrivateCars(category, period) {
         perQuery += "none";
     }
     const response = await fetch(baseURL + "/configure" + catQuery + perQuery)
-    const tasksJson = await response.json();
+    const carsJson = await response.json();
     if (response.ok) {
-        return tasksJson.map((ex) => Object.assign(new Car(), ex));
+        return carsJson.map((ex) => Object.assign(new Car(), ex));
     } else {
-        let err = {status: response.status, errObj:tasksJson};
+        let err = {status: response.status, errObj:carsJson};
         throw err;  // An object with the error coming from the server
     }
 }

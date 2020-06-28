@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './userTable.css';
 import API from '../api/API';
 import moment from 'moment'
@@ -64,10 +64,11 @@ class RentalHistory extends React.Component {
 const FutureRentalRow = (props) => {
     return (<>
         <OverlayTrigger
-            key={{ ...props.rental }}
+            key={props.rental.carBrand + props.rental.carModel + props.rental.userId + props.rental.startDate + props.rental.endDate}
             placement="left"
+            transition={null}
             overlay={
-                <Tooltip>
+                <Tooltip >
                     Click to delete.
                 </Tooltip>
             }
@@ -183,7 +184,7 @@ const RentalsTable = (props) => {
 }
 
 const DeletionPopUp = (props) => {
-    return <Modal show={props.show} className="my-5">
+    return <Modal show={props.show} onHide={props.setDeletionPopUp} className="my-5" animation={false}>
 
         <Modal.Body>
             <h4>Do you really want to delete this future rental?</h4>

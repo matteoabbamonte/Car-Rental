@@ -13,16 +13,16 @@ class Login extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            email: 'matteo@email.com',
-            password: 'passwordmatteo',
+            email: '',
+            password: '',
             loginError: false,
             success: false
         }
     }
 
     componentDidMount() {
-        this.setState({email: 'matteo@email.com',
-        password: 'passwordmatteo',
+        this.setState({email: '',
+        password: '',
         loginError: false,
         success: false});
     }
